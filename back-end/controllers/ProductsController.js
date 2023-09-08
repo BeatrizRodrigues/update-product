@@ -8,11 +8,6 @@ module.exports = class ProductsController {
         const codeProduct = req.body.product_code
         const newPrice = req.body.new_price
       
-        if (!newPrice) {
-            res.status(422).json({ message: 'O preço é obrigatório!' })
-            return
-        }
-
         try {
 
             const productExist = await Products.findOne({
@@ -27,21 +22,6 @@ module.exports = class ProductsController {
             if (!productExist) {
                 res.status(422).json({ message: 'Produto não existe !' })
                 return
-            }
-            
-            if (parseFloat(productExist.cost_price) > newPrice){
-                res.status(422).json({ message: 'Preço menor que custo' })
-                return
-            }
-            
-            var resultadoMaior = parseFloat(productExist.sales_price) + ((0.1*productExist.sales_price))
-            var resultadoMenor = parseFloat(productExist.sales_price) - (0.1*productExist.sales_price)
-
-            if (newPrice > parseFloat(resultadoMaior.toFixed(2))
-                || newPrice < parseFloat(resultadoMenor.toFixed(2))){
-                
-                res.status(422).json({ message: 'Preço menor ou maior que 10% do valor atual' })
-                return  
             }
 
             const productPack = await Packs.findOne({
@@ -80,20 +60,19 @@ module.exports = class ProductsController {
                         }
                     );
                 }
-
-                await Products.update(
-                    { sales_price: newPrice }, {
-                    where: {
-                        code: codeProduct
-                    },
-                    attributes: {
-                        exclude: ['updatedAt']
-                    }
-                });
-
-                res.status(200).json({ products: productExist, message: 'Produto atualizado com sucesso!' });
-
+                
             }
+            await Products.update(
+                { sales_price: newPrice }, {
+                where: {
+                    code: codeProduct
+                },
+                attributes: {
+                    exclude: ['updatedAt']
+                }
+            });
+
+            res.status(200).json({ products: productExist, oldPrice:  productExist.sales_price });
 
         } catch (error) {
             console.error('Erro ao atualizar registros:', error);
@@ -132,6 +111,7 @@ module.exports = class ProductsController {
                     exclude: ['createdAt', 'updatedAt']
                 }
             });
+
 
             res.status(200).json({ products: products });
 
